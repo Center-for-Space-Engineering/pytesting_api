@@ -8,6 +8,7 @@ import glob
 from bs4 import BeautifulSoup
 import pytest
 from datetime import datetime
+import contextlib
 
 #custom imports
 from pytesting_api import global_test_variables # pylint: disable=e0401
@@ -21,8 +22,18 @@ class test_runner:
         # Define the directory path where the HTML report should be saved
         self.__name = name
         self.__REPORTS_DIRECTORY = 'templates'
+        
         self.__failed_test_path = failed_test_path
         self.__passed_test_path = passed_test_path
+        # Make sure the folder exist and create them if they don't 
+        if not os.path.exists(self.__failed_test_path):
+            os.makedirs(self.__failed_test_path)
+            print(f"Created directory: {self.__failed_test_path}")
+
+        if not os.path.exists(self.__passed_test_path):
+            os.makedirs(self.__passed_test_path)
+            print(f"Created directory: {self.__passed_test_path}")
+
         self.__max_files_passed = max_files_passed
         self.__table_name = 'tests_record'
         self.__table_structure = {
@@ -42,11 +53,18 @@ class test_runner:
             '--html=' + report_path,
             '--no-summary',
             'pytesting_api/tests/',
-            '--quiet'
+            '--quiet',
+            '--tb=no',
+            '--capture=no',
+            '--disable-warnings',
+            '--log-cli-level=INFO',
         ]
 
-        # Run pytest programmatically
-        exit_code = pytest.main(pytest_args)
+        # Run pytest programmatically with output suppressed
+        with open(os.devnull, 'w') as devnull:
+            with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+                exit_code = pytest.main(pytest_args)# Run pytest programmatically
+                exit_code = pytest.main(pytest_args)
 
         # Check if there were failed tests
         if exit_code == 0:

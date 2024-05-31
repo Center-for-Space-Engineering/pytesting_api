@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import pytest
 from datetime import datetime
 import contextlib
+import threading
 
 #custom imports
 from pytesting_api import global_test_variables # pylint: disable=e0401
@@ -25,6 +26,8 @@ class test_runner:
         
         self.__failed_test_path = failed_test_path
         self.__passed_test_path = passed_test_path
+        self.__test_group = 'group1'
+        self.__test_group_lock = threading.Lock()
         # Make sure the folder exist and create them if they don't 
         if not os.path.exists(self.__failed_test_path):
             os.makedirs(self.__failed_test_path)
@@ -48,23 +51,30 @@ class test_runner:
         # Define the path for the HTML report
         report_path = os.path.join(self.__REPORTS_DIRECTORY, 'testing_report.html')
 
+        if self.__test_group_lock.acquire(timeout=1):
+            test_group = self.__test_group
+            self.__test_group_lock.release()
+        else :
+            raise RuntimeError("Could not acquire test group lock")
+
         # Define the arguments for pytest
         pytest_args = [
             '--html=' + report_path,
             '--no-summary',
-            'pytesting_api/tests/',
             '--quiet',
             '--tb=no',
             '--capture=no',
             '--disable-warnings',
             '--log-cli-level=INFO',
+            'pytesting_api/tests/',
+            '-m', 
+            test_group,
         ]
 
         # Run pytest programmatically with output suppressed
         with open(os.devnull, 'w') as devnull:
             with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
                 exit_code = pytest.main(pytest_args)# Run pytest programmatically
-                exit_code = pytest.main(pytest_args)
 
         # Check if there were failed tests
         if exit_code == 0:
@@ -172,3 +182,16 @@ class test_runner:
             files_to_delete = files[:len(files) - self.__max_files_passed]
             for file_to_delete in files_to_delete:
                 os.remove(file_to_delete)
+    def set_test_group(self, args):
+        '''
+            This function sets the test group to run
+            
+            ARGS:
+                args[0] = test_group (path to folder that has the test for this test group)
+        '''
+        if self.__test_group_lock.acquire(timeout=1):
+            self.__test_group = args[0]
+            self.__test_group_lock.release()
+        else :
+            raise RuntimeError("Could not aquire test group lock")
+

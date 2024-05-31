@@ -1,6 +1,51 @@
 # Architecture overview:
+The pytesting framework is set up to provide an easy and simple way for users to set up unit test on the CSE framework. The basic structure is to define files, then test in those files and assign them to groups. This document has two main section. The first describes the how to build test on the CSE framework, the second just gives some general information on pytest.  
 
-# How go to pytesting_api
+# HOW TO build unit test
+In the cse framework all unit test must be located in the `pytesting_api/tests`. There are no exception to this. In side this folder you can create files that start with `test_`. The number and names of these files (outside of the aforementioned prefix) does not matter. I would recommend creating files for types of unit test. Then inside those files fall the following to create a unit test: 
+
+1. Use the correct imports:
+   ```python
+      import pytest #pylint: disable=w0611
+      from pytesting_api import global_test_variables # pylint: disable=e0401
+   ```
+
+   NOTE: 
+      - pytest is used to group our tests (and other things if needed). 
+      - global_test_variables is used to give the test access to the coms object and the database name.
+2. Lets create a test group to assign our test too. In the `pytesting_api/pytest.ini` under `markers =` add a new test group.
+   Example:
+   ```python
+   [pytest]
+   markers =
+      group1 : 'test group 1'
+      group2 : 'test group 2'
+      group3 : 'test group 3'
+   ```
+   This creates 3 groups they are group1, group2, group3.
+3. Now lets build a unit test. first consider the following example:
+   ```python
+   @pytest.mark.group3
+   def test_example_coms():
+      '''
+         Example of how to call the coms object
+      '''
+      assert global_test_variables.coms.get_test() == "testing"
+   ```
+   - Consider the first line: `@pytest.mark.group3` this line tell `pytest` and 'marks' it as being in `group3` that we created earlier. 
+   - Next consider the function declaration: `def test_example_coms():` notice that this starts with `test_` this tells `pytest` that this function is a test and needs to be run. In other words, ALL your functions need to start with `test_`. If they don't then your test will not run.
+   - Finally consider `global_test_variables.coms.get_test()` this is how you can call function in the coms object. Which means you can make request to other threads just like we do in other places in the CSE framework. 
+   Example:
+   ```python
+   self.__table_name = 'tests_record'
+   self.__table_structure = {
+      self.__table_name : [['test_run_time', 0, 'string'], ['pass_fail', 0, 'string'], ['session_ID', 0, 'string']],
+   }
+   global_test_variables.coms.send_request(global_test_variables.db_name, ['create_table_external', self.__table_structure])
+   ```
+NOTE: These lines of code are used in the test_runner, to create a table in the database to store testing information. However, they give an example of how to use the `global_test_variables.coms.send_request`. 
+
+
 
 # Using pytest: Fixtures and Parameters
 

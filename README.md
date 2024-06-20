@@ -1,12 +1,17 @@
 # Architecture overview:
 The pytesting framework is set up to provide an easy and simple way for users to set up unit test on the CSE framework. The basic structure is to define files, then test in those files and assign them to groups. This document has two main section. The first describes the how to build test on the CSE framework, the second just gives some general information on pytest.  
 
+NOTE: It is often useful to set the `DEBUG_UNIT_TEST` variable to `TRUE` because it will allow the unit test to output to the terminal. When actually running them set it to false as to not over load the screen. 
+
 # HOW TO build unit test
 In the cse framework all unit test must be located in the `pytesting_api/tests`. There are no exception to this. In side this folder you can create files that start with `test_`. The number and names of these files (outside of the aforementioned prefix) does not matter. I would recommend creating files for types of unit test. Then inside those files fall the following to create a unit test: 
 
 1. Use the correct imports:
    ```python
       import pytest #pylint: disable=w0611
+      import copy
+      from datetime import datetime, timezone
+      import threading
       from pytesting_api import global_test_variables # pylint: disable=e0401
    ```
 
@@ -23,7 +28,35 @@ In the cse framework all unit test must be located in the `pytesting_api/tests`.
       group3 : 'test group 3'
    ```
    This creates 3 groups they are group1, group2, group3.
-3. Now lets build a unit test. first consider the following example:
+3. Many if not all test will want to use a set up function to get data for a sensor, or something you wish to test. Here is an example of how to do so. 
+   Example:
+   ```python
+      data_buf = None
+      data_buf_lock = threading.Lock()
+
+      @pytest.fixture(scope="session", autouse=True)
+      def setup_before_all_tests():
+         '''
+            Example to send request to GPS_board to listen to it
+         '''
+         global_test_variables.coms.send_request('gps_board', ['create_tap', set_data, 'gps_test'])
+
+      def set_data(data, _):
+      '''
+         Example of tapping data from GPS data stream
+      '''
+      global data_buf
+      global data_buf_lock
+
+      if data_buf_lock.acquire(timeout=1):
+         data_buf = copy.deepcopy(data)
+         data_buf_lock.release()
+      else:
+         raise RuntimeError('cannot acquire data_buf_lock')
+   ```
+   Note: This example creates a request to the `gps_board` so that we can listen to its data and then process it. The way this works is the `setup` function makes a tap to the `gps_board`, the `gps_board` will then call the `set_data` function to store the data in the `data_buff` variable.
+
+4. Now lets build a unit test. first consider the following example:
    ```python
    @pytest.mark.group3
    def test_example_coms():
@@ -44,6 +77,44 @@ In the cse framework all unit test must be located in the `pytesting_api/tests`.
    global_test_variables.coms.send_request(global_test_variables.db_name, ['create_table_external', self.__table_structure])
    ```
 NOTE: These lines of code are used in the test_runner, to create a table in the database to store testing information. However, they give an example of how to use the `global_test_variables.coms.send_request`. 
+
+Also consider how to get the data for processing:
+```python
+   @pytest.mark.gps_hat
+   def test_gps_day():
+      '''
+         testing the GPS day against server day
+      '''
+      global data_buf
+      global data_buf_lock
+
+      if data_buf_lock.acquire(timeout=1):
+         data_buf_copy = copy.deepcopy(data_buf)
+         data_buf_lock.release()
+      else:
+         raise RuntimeError('cannot acquire data_buf_lock')
+      
+      # Get the current UTC datetime
+      current_utc_datetime = datetime.now(timezone.utc)
+
+      # Get the current UTC date
+      current_utc_date = current_utc_datetime.date()
+
+      assert current_utc_date == data_buf_copy['day'][-1]
+```
+
+Note: That in order to get the data for processing we make a copy of it, using the following lines. 
+```python
+   global data_buf
+   global data_buf_lock
+
+   if data_buf_lock.acquire(timeout=1):
+      data_buf_copy = copy.deepcopy(data_buf)
+      data_buf_lock.release()
+   else:
+      raise RuntimeError('cannot acquire data_buf_lock')
+```
+It is important make sure you can copy the data so that you don't run into threading problems. 
 
 
 

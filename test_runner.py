@@ -19,10 +19,11 @@ class test_runner:
     '''
         This module is is how we call and run our unit test. Make sure to give it the coms object. 
     '''
-    def __init__(self, name:str = 'test_executor', failed_test_path:str = '', passed_test_path:str = '', max_files_passed:int = 10):
+    def __init__(self, name:str = 'test_executor', failed_test_path:str = '', passed_test_path:str = '', max_files_passed:int = 10, debug:bool = False):
         # Define the directory path where the HTML report should be saved
         self.__name = name
         self.__REPORTS_DIRECTORY = 'templates'
+        self.__debug = debug
         
         self.__failed_test_path = failed_test_path
         self.__passed_test_path = passed_test_path
@@ -71,10 +72,13 @@ class test_runner:
             test_group,
         ]
 
-        # Run pytest programmatically with output suppressed
-        with open(os.devnull, 'w') as devnull:
-            with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
-                exit_code = pytest.main(pytest_args)# Run pytest programmatically
+        if not self.__debug:
+            # Run pytest programmatically with output suppressed
+            with open(os.devnull, 'w') as devnull:
+                with contextlib.redirect_stdout(devnull), contextlib.redirect_stderr(devnull):
+                    exit_code = pytest.main(pytest_args)# Run pytest programmatically
+        else : 
+            exit_code = pytest.main(pytest_args)# Run pytest programmatically, changed to read gps hat
 
         # Check if there were failed tests
         if exit_code == 0:

@@ -1,0 +1,4 @@
+test_library_table_name: 'SWP2_Testing_Library'
+sheet_name: 'Sheet1'
+file_path: 'SWP2_Testing.xlsx'
+output_file_name: 'tests.yaml'

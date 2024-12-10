@@ -1,0 +1,17 @@
+debug:
+  Description: blah
+  Parameters:
+    group1:
+    - '''Hello'''
+    - '''world'''
+  Period: 1
+  Procedures: group1
+FPP/FBP Calibration:
+  Description: blah
+  Parameters:
+    FPP4:
+    - '0'
+    - '5'
+    - '0.25'
+  Period: 120
+  Procedures: FPP4

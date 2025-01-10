@@ -1,17 +1,45 @@
-debug:
-  Description: blah
+FBP DAC Calibration:
+  Description: FBP DAC calibrations with keithly
   Parameters:
-    group1:
-    - '''Hello'''
-    - '''world'''
-  Period: 1
-  Procedures: group1
-FPP/FBP Calibration:
-  Description: blah
+    FBP_DAC:
+    - '-3'
+    - '3'
+    - '0.25'
+    - '1'
+    - '1000'
+  Period: 3600
+  Procedures: FBP_DAC
+SLP DAC Calibration:
+  Description: SLP DAC calibrations with keithly
+  Parameters:
+    SLP_DAC:
+    - '-3'
+    - '3'
+    - '0.25'
+    - '1'
+    - '1000'
+  Period: 3600
+  Procedures: SLP_DAC
+SLP ADC Calibration:
+  Description: SLP ADC calibrations with keithly DVM, Current supply
+  Parameters:
+    SLP_ADC:
+    - -60e-6
+    - 60e-6
+    - -1e-6
+    - 1e-6
+    - '10'
+    - '-3'
+    - '2'
+    - '1'
+  Period: 3600
+  Procedures: SLP_ADC
+FPP Calibration:
+  Description: fpp4 calibraiton with RS
   Parameters:
     FPP4:
     - '0'
     - '5'
     - '0.25'
-  Period: 120
+  Period: 3600
   Procedures: FPP4

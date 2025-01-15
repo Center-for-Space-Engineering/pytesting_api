@@ -23,8 +23,8 @@ def setup_before_all_tests():
 
    #make table structure
    table_structure = {
-      f'calibration_SLP_ADC_low' : [['DAC_word', 0, 'string'], ['measured_voltage', 0, 'string'], ['set_current', 0, 'string'], ['measured_current', 0, 'string'], ['gain', 0, 'string'], ['variance_c', 0, 'string'], ['sigma_c', 0, 'string']],
-      f'calibration_SLP_ADC_high' : [['DAC_word', 0, 'string'], ['measured_voltage', 0, 'string'], ['set_current', 0, 'string'], ['measured_current', 0, 'string'],['gain', 0, 'string'], ['variance_c', 0, 'string'], ['sigma_c', 0, 'string']],
+      f'calibration_SLP_ADC_low' : [['DAC_word', 0, 'string'], ['measured_voltage', 0, 'string'], ['set_current', 0, 'string'], ['measured_current', 0, 'string'], ['gain', 0, 'string'], ['variance_c', 0, 'string'], ['sigma_c', 0, 'string'], ['starting_line', 0, 'string'], ['ending_line', 0, 'string']],
+      f'calibration_SLP_ADC_high' : [['DAC_word', 0, 'string'], ['measured_voltage', 0, 'string'], ['set_current', 0, 'string'], ['measured_current', 0, 'string'],['gain', 0, 'string'], ['variance_c', 0, 'string'], ['sigma_c', 0, 'string'], ['starting_line', 0, 'string'], ['ending_line', 0, 'string']],
    }
 
 
@@ -64,6 +64,8 @@ def test_low_gain():
             'gain' : [],
             'variance_c' : [],
             'sigma_c' : [],
+            'starting_line' : [],
+            'ending_line' : []
          }
       
       #grab the instruments 
@@ -79,8 +81,16 @@ def test_low_gain():
 
       instrument_dict['digital_voltmeter_keithley'].write(['*RST']) #reset machine
       instrument_dict['keithley6221'].write(['*RST']) #reset machine
-
       logger.send_log('Wrote reset to instruments')
+
+      instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
+      instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
+      instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
+
+      lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?'])
+      ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?'])
+      logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
+
 
       # get parameters out of file
       cmin_l = float(global_test_variables.tests_parameters_dict['SLP_ADC'][0])
@@ -106,6 +116,9 @@ def test_low_gain():
       # Turn on auto ranging for the keithley
       instrument_dict['keithley6221'].write(["CURR:RANG:AUTO ON"])
 
+      requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
+
+
 
       for voltage in setVoltage:
          # set the voltage
@@ -113,7 +126,6 @@ def test_low_gain():
          requests.get(f'http://{hostname}:{port}/command_SWP_config/manSLP/255/{dac_word}/{0}/{255}/local_code=501', timeout=10)
          logger.send_log(f"voltage {voltage} dac_word {dac_word}")
          for current in setCurrentLow:
-            instrument_dict['keithley6221'].write(['*RST']) #reset machine
             # Turn on auto ranging for the keithley
             instrument_dict['keithley6221'].write(["CURR:RANG:AUTO ON"])
             instrument_dict['keithley6221'].write(["OUTP OFF"])
@@ -143,8 +155,11 @@ def test_low_gain():
                idx_db = global_test_variables.get_last_idx('SLP') # NOTE: We dont need a sleep statement here because the get_last_idx has that already.       
             logger.send_log(f"Last saved idx: {idx_db}")
 
-            sample_idx = idx_db_last + 1
+            sample_idx = idx_db_last + 1 if idx_db_last != 0 else sample_idx
             logger.send_log(f"Staring idx {sample_idx}")
+
+            data['starting_line'].append(sample_idx)
+            data['ending_line'].append(sample_idx + 1052)
             
             # Turn off packets after we get data
             requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
@@ -154,7 +169,7 @@ def test_low_gain():
             idx_db_last = global_test_variables.get_last_idx('SLP')
 
             #pull packet out of database
-            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1052)
+            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1051)
 
             for key in data_db_SLP:
                match key:
@@ -198,6 +213,8 @@ def test_high_gain():
             'gain' : [],
             'variance_c' : [],
             'sigma_c' : [],
+            'starting_line' : [],
+            'ending_line' : []
          }
       
       #grab the instruments 
@@ -215,6 +232,14 @@ def test_high_gain():
       instrument_dict['keithley6221'].write(['*RST']) #reset machine
 
       logger.send_log('Wrote reset to instruments')
+
+      instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
+      instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
+      instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
+
+      lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?']) 
+      ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?']) 
+      logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
 
       # get parameters out of file
       cmin_h = float(global_test_variables.tests_parameters_dict['SLP_ADC'][2])
@@ -240,6 +265,9 @@ def test_high_gain():
       # Turn on auto ranging for the keithley
       instrument_dict['keithley6221'].write(["CURR:RANG:AUTO ON"])
 
+      requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
+
+
 
       for voltage in setVoltage:
          # set the voltage
@@ -247,7 +275,6 @@ def test_high_gain():
          requests.get(f'http://{hostname}:{port}/command_SWP_config/manSLP/255/{dac_word}/{0}/{0}/local_code=501', timeout=10)
          logger.send_log(f"voltage {voltage} dac_word {dac_word}")
          for current in setCurrentHigh:
-            instrument_dict['keithley6221'].write(['*RST']) #reset machine
             # Turn on auto ranging for the keithley
             instrument_dict['keithley6221'].write(["CURR:RANG:AUTO ON"])
             instrument_dict['keithley6221'].write(["OUTP OFF"])
@@ -277,10 +304,11 @@ def test_high_gain():
                idx_db = global_test_variables.get_last_idx('SLP') # NOTE: We dont need a sleep statement here because the get_last_idx has that already.       
             logger.send_log(f"Last saved idx: {idx_db}")
 
-            sample_idx = idx_db_last + 1
+            sample_idx = idx_db_last + 1 if idx_db_last != 0 else sample_idx
             logger.send_log(f"Staring idx {sample_idx}")
-            
 
+            data['starting_line'].append(sample_idx)
+            data['ending_line'].append(sample_idx + 1052)
 
             # Turn off packets after we get data
             requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
@@ -290,7 +318,7 @@ def test_high_gain():
             idx_db_last = global_test_variables.get_last_idx('SLP')
 
             #pull packet out of database
-            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1052)
+            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1051)
 
             for key in data_db_SLP:
                match key:

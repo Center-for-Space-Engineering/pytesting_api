@@ -15,6 +15,7 @@ import time
 
 #custom imports
 from pytesting_api import global_test_variables # pylint: disable=e0401
+from logging_system_display_python_api.logger import loggerCustom
 
 
 class test_runner:
@@ -50,6 +51,8 @@ class test_runner:
         # Load the YAML file
         with open(test_groups_file, "r") as file:
             self.__tests_group = yaml.safe_load(file)
+
+        self.__logger = loggerCustom('logs/test_runner.txt')
         
         
     def get_predefine_test_groups(self):
@@ -71,6 +74,8 @@ class test_runner:
 
         #now we want to loop though each test in order
         tests = test_group['Procedures'].split(',')
+
+        self.__logger.send_log(f"tests: {tests}")
 
         for test in tests:
             #set test group
@@ -98,7 +103,7 @@ class test_runner:
             raise RuntimeError("Could not acquire test group lock")
 
         # Define the arguments for pytest
-        print(test_group)
+        self.__logger.send_log(f"Running test: {test_group}")
         pytest_args = [
             '--html=' + report_path,
             '--no-summary',

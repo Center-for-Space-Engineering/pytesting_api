@@ -1,10 +1,118 @@
+FBPI DAC Calibration:
+  Description: FBPI DAC calibrations with keithly
+  Parameters:
+    FBPI_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: FBPI_DAC
+RAMI DAC Calibration:
+  Description: RAMI DAC calibrations with keithly
+  Parameters:
+    RAMI_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: RAMI_DAC
+AOP 1 DAC Calibration:
+  Description: AOP1 DAC calibrations with keithly
+  Parameters:
+    AOP1_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: AOP1_DAC
+AOP 2 DAC Calibration:
+  Description: AOP2 DAC calibrations with keithly
+  Parameters:
+    AOP2_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: AOP2_DAC
+FBPI ADC Calibration:
+  Description: FBPI ADC calibrations with keithly DVM, current supply
+  Parameters:
+    FBPI_ADC:
+    - -3e-6
+    - 3e-6
+    - '5'
+    - '-4'
+    - '4'
+    - '1'
+  Period: 3600
+  Procedures: FBPI_ADC
+RAMI ADC Calibration:
+  Description: RAMI ADC calibrations with keithly DVM, Current supply
+  Parameters:
+    RAMI_ADC:
+    - -180e-9
+    - 180e-9
+    - '5'
+    - '-3.5'
+    - '3.5'
+    - '1'
+  Period: 3600
+  Procedures: RAMI_ADC
+AOP 1 ADC Calibration:
+  Description: AOP 1 ADC calibrations with keithly DVM, Current supply
+  Parameters:
+    AOP1_ADC:
+    - -380e-6
+    - 380e-6
+    - -60e-6
+    - 60e-6
+    - '5'
+    - '-3.5'
+    - '3.5'
+    - '1'
+  Period: 3600
+  Procedures: AOP1_ADC
+AOP 2 ADC Calibration:
+  Description: AOP 2 ADC calibrations with keithly DVM, Current supply
+  Parameters:
+    AOP2_ADC:
+    - -380e-6
+    - 380e-6
+    - -60e-6
+    - 60e-6
+    - '5'
+    - '-3.5'
+    - '3.5'
+    - '1'
+  Period: 3600
+  Procedures: AOP2_ADC
+FBP ADC Calibration:
+  Description: FBP ADC calibrations with keithly DVM, Current supply
+  Parameters:
+    FBP_ADC:
+    - -60e-6
+    - 60e-6
+    - '5'
+    - '-3.5'
+    - '3.5'
+    - '1'
+  Period: 3600
+  Procedures: FBP_ADC
 FBP DAC Calibration:
   Description: FBP DAC calibrations with keithly
   Parameters:
     FBP_DAC:
-    - '-3'
-    - '3'
-    - '0.25'
+    - '0'
+    - '3.5'
+    - '0.5'
     - '1'
     - '1000'
   Period: 3600
@@ -13,9 +121,9 @@ SLP DAC Calibration:
   Description: SLP DAC calibrations with keithly
   Parameters:
     SLP_DAC:
-    - '-3'
-    - '3'
-    - '0.25'
+    - '-3.5'
+    - '3.5'
+    - '0.5'
     - '1'
     - '1000'
   Period: 3600
@@ -28,9 +136,9 @@ SLP ADC Calibration:
     - 60e-6
     - -1e-6
     - 1e-6
-    - '10'
-    - '-3'
-    - '2'
+    - '5'
+    - '-3.5'
+    - '3.5'
     - '1'
   Period: 3600
   Procedures: SLP_ADC
@@ -43,3 +151,66 @@ FPP Calibration:
     - '0.25'
   Period: 3600
   Procedures: FPP4
+Keithley Sweep AOP1 Low:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpAOP1Low:
+    - ''
+  Period: 5
+  Procedures: KeithSwpAOP1Low
+Keithley Sweep AOP1 High:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpAOP1High:
+    - ''
+  Period: 5
+  Procedures: KeithSwpAOP1High
+Keithley Sweep AOP2 Low:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpAOP2Low:
+    - ''
+  Period: 5
+  Procedures: KeithSwpAOP2Low
+Keithley Sweep AOP2 High:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpAOP2High:
+    - ''
+  Period: 5
+  Procedures: KeithSwpAOP2High
+Keithley Sweep RIC:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpRIC:
+    - ''
+  Period: 5
+  Procedures: KeithSwpRIC
+Keithley Sweep FBPI:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpFBPI:
+    - ''
+  Period: 5
+  Procedures: KeithSwpFBPI
+Keithley Sweep SLP Low:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpSLPLow:
+    - ''
+  Period: 5
+  Procedures: KeithSwpSLPLow
+Keithley Sweep SLP High:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpSLPHigh:
+    - ''
+  Period: 5
+  Procedures: KeithSwpSLPHigh
+Keithley Sweep SWP FBP:
+  Description: A simple function to sweep the keithley source
+  Parameters:
+    KeithSwpSWPFBP:
+    - ''
+  Period: 5
+  Procedures: KeithSwpSWPFBP

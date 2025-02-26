@@ -7,10 +7,15 @@ import traceback
 
 from pytesting_api import global_test_variables # pylint: disable=e0401
 from logging_system_display_python_api.logger import loggerCustom
+from command_packets.functions import SLP_calibrated_dac_code
+
 import system_constants # pylint: disable=e0401
 
 
 logger = loggerCustom("logs/slp_adc_calibration_test.txt")
+
+granule_count = 1052
+packet_count = 10
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_before_all_tests():
@@ -38,6 +43,7 @@ def setup_before_all_tests():
    requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
    requests.get(f'http://{hostname}:{port}/command_from_file/send_idle_packet/local_code=501', timeout=10)
    requests.get(f'http://{hostname}:{port}/command_from_file/enter_calibration_mode/local_code=501', timeout=10)
+   requests.get(f'http://{hostname}:{port}/command_SWP_config/cfgSLP/2/local_code=501', timeout=10)
 
 
 
@@ -83,13 +89,13 @@ def test_low_gain():
       instrument_dict['keithley6221'].write(['*RST']) #reset machine
       logger.send_log('Wrote reset to instruments')
 
-      instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
-      instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
-      instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
 
-      lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?'])
-      ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?'])
-      logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
+      # lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?'])
+      # ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?'])
+      # logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
 
 
       # get parameters out of file
@@ -109,7 +115,6 @@ def test_low_gain():
       setCurrentLow = np.linspace(cmin_l,cmax_l,c_step_count) # start voltage, max voltage, number of points
 
       transient_delay = 3
-      v_ref = 4.096
 
       logger.send_log(f'Calibrations Parameters:\n\tvoltages: {setVoltage}\n\ttransient {transient_delay}\n\tsetCurrentLow {setCurrentLow}')
 
@@ -122,7 +127,7 @@ def test_low_gain():
 
       for voltage in setVoltage:
          # set the voltage
-         dac_word = int(((voltage + v_ref) * 32768) / v_ref)
+         dac_word = SLP_calibrated_dac_code(voltage=voltage) # call calibrated dac word conversion.
          requests.get(f'http://{hostname}:{port}/command_SWP_config/manSLP/255/{dac_word}/{0}/{255}/local_code=501', timeout=10)
          logger.send_log(f"voltage {voltage} dac_word {dac_word}")
          for current in setCurrentLow:
@@ -151,15 +156,16 @@ def test_low_gain():
       
             #wait for more data to come in.
             idx_db = global_test_variables.get_last_idx('SLP')
-            while idx_db == idx_db_last: # wait for next idx to come in for board
+            total_liens = granule_count * packet_count
+            while idx_db < (idx_db_last + total_liens): # wait for next idx to come in for board
                idx_db = global_test_variables.get_last_idx('SLP') # NOTE: We dont need a sleep statement here because the get_last_idx has that already.       
             logger.send_log(f"Last saved idx: {idx_db}")
 
-            sample_idx = idx_db_last + 1 if idx_db_last != 0 else sample_idx
+            sample_idx = idx_db_last if idx_db_last != 0 else sample_idx
             logger.send_log(f"Staring idx {sample_idx}")
 
             data['starting_line'].append(sample_idx)
-            data['ending_line'].append(sample_idx + 1052)
+            data['ending_line'].append(sample_idx + total_liens)
             
             # Turn off packets after we get data
             requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
@@ -169,7 +175,7 @@ def test_low_gain():
             idx_db_last = global_test_variables.get_last_idx('SLP')
 
             #pull packet out of database
-            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1051)
+            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = total_liens - 1)
 
             for key in data_db_SLP:
                match key:
@@ -190,7 +196,7 @@ def test_low_gain():
       print(traceback.format_exc())
 
 
-# @pytest.mark.SLP_ADC #MAKE SURE TO ADD THE TEST GROUP (PROCEDURE)
+@pytest.mark.SLP_ADC #MAKE SURE TO ADD THE TEST GROUP (PROCEDURE)
 def test_high_gain():
    try :
       #get system variables
@@ -233,13 +239,13 @@ def test_high_gain():
 
       logger.send_log('Wrote reset to instruments')
 
-      instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
-      instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
-      instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP OFF']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP:ISH GUAR']) #set guard mode
+      # instrument_dict['keithley6221'].write(['OUTP:LTE OFF']) #set guard mode
 
-      lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?']) 
-      ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?']) 
-      logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
+      # lte = instrument_dict['keithley6221'].write_read(['OUTP:LTE?']) 
+      # ish = instrument_dict['keithley6221'].write_read(['OUTP:ISH?']) 
+      # logger.send_log(f'Set guard mode, reported configs are guard {ish} LTEarth {lte}')
 
       # get parameters out of file
       cmin_h = float(global_test_variables.tests_parameters_dict['SLP_ADC'][2])
@@ -271,7 +277,7 @@ def test_high_gain():
 
       for voltage in setVoltage:
          # set the voltage
-         dac_word = int(((voltage + v_ref) * 32768) / v_ref)
+         dac_word = SLP_calibrated_dac_code(voltage=voltage) # call calibrated dac word conversion.
          requests.get(f'http://{hostname}:{port}/command_SWP_config/manSLP/255/{dac_word}/{0}/{0}/local_code=501', timeout=10)
          logger.send_log(f"voltage {voltage} dac_word {dac_word}")
          for current in setCurrentHigh:
@@ -299,16 +305,18 @@ def test_high_gain():
 
       
             #wait for more data to come in.
+            #wait for more data to come in.
             idx_db = global_test_variables.get_last_idx('SLP')
-            while idx_db == idx_db_last: # wait for next idx to come in for board
+            total_liens = granule_count * packet_count
+            while idx_db < (idx_db_last + total_liens): # wait for next idx to come in for board
                idx_db = global_test_variables.get_last_idx('SLP') # NOTE: We dont need a sleep statement here because the get_last_idx has that already.       
             logger.send_log(f"Last saved idx: {idx_db}")
 
-            sample_idx = idx_db_last + 1 if idx_db_last != 0 else sample_idx
+            sample_idx = idx_db_last if idx_db_last != 0 else sample_idx
             logger.send_log(f"Staring idx {sample_idx}")
 
             data['starting_line'].append(sample_idx)
-            data['ending_line'].append(sample_idx + 1052)
+            data['ending_line'].append(sample_idx + total_liens)
 
             # Turn off packets after we get data
             requests.get(f'http://{hostname}:{port}/command_from_file/send_mode_packet/0000/local_code=501', timeout=10)
@@ -318,7 +326,7 @@ def test_high_gain():
             idx_db_last = global_test_variables.get_last_idx('SLP')
 
             #pull packet out of database
-            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = 1051)
+            data_db_SLP = global_test_variables.get_data_from_data_base(table_name = 'SLP', starting_idx = sample_idx, max_num_lines = total_liens - 1)
 
             for key in data_db_SLP:
                match key:

@@ -50,11 +50,10 @@ def test_get_last_idx(setup_mocks):
     assert mock_coms.get_return.call_count == 4
 
 @pytest.mark.global_test_variables_tests
-def test_save_data_to_db(setup_mocks):
-    mock_coms = messageHandler()
+@patch.object(global_test_variables, 'db_name', new=str("Kade"))
+@patch.object(global_test_variables, 'coms', new_callable=messageHandler)
+def test_save_data_to_db(mock_coms, setup_mocks):
     tester = global_test_variables
-    tester.coms = mock_coms
-    tester.db_name = "Kade"
 
     tester.save_data_to_db('Big Justin', ['data'], 'thread')
     mock_coms.send_request.assert_called_with('Kade', ['save_data_group', 'Big Justin', ['data'], 'thread'])

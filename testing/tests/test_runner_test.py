@@ -3,10 +3,15 @@ import pytest
 from unittest.mock import MagicMock, patch
 from itertools import cycle
 import threading
+import subprocess
+import sys
 
 from pytesting_api.test_runner import test_runner
 from pytesting_api import global_test_variables
+from pytesting_api import test_runner as test_runner_class
 from logging_system_display_python_api.messageHandler import messageHandler
+
+DEBUG = False
 
 ##### Setup #####
 @pytest.fixture
@@ -91,52 +96,80 @@ def test_run_predefined_test(mock_run_test, mock_set_test_group, mock_time, patc
     assert mock_run_test.call_count == 3
     assert global_test_variables.tests_parameters_dict == {'RAMI_DAC': ['-2', '2', '1', '1', '500'], 'SECOND_TEST': ['1', '-1']}
 
-#TODO
 @pytest.mark.test_runner_tests
-@patch.object(test_runner, 'make_html_report')
-@patch.object(pytest, 'main')
-@patch('pytesting_api.test_runner.contextlib', MagicMock(redirect_stdout=MagicMock(), redirect_stderr=MagicMock()))
-def test_run_tests(mock_pytest, mock_html_report, patch_coms, patch_os, patch_yaml):
-    runner = test_runner()
-    mock_lock = MagicMock(acquire=MagicMock(), release=MagicMock())
-    runner._test_runner__test_group_lock = mock_lock
-    data = {
-        'test_run_time' : [],
-        'pass_fail' : [''],
-        'session_ID' : ['']
-    }
-
-    #typical case
-    mock_lock.acquire.return_value = True
-    runner.run_tests()
-
-    mock_pytest.assert_called_with([
-            '--html=',
-            '--no-summary',
-            '--quiet',
-            '--tb=no',
-            '--capture=no',
-            '--disable-warnings',
-            '--log-cli-level=INFO',
-            'pytesting_api/tests/',
-            '-m', 
-            'group1',
-        ])
-    patch_coms.send_request.assert_called_with('', ['save_data_group', 'tests_record', data, 'test_executor'])
+# In order to mock pytest.main, a subprocess must be created, because calling pytest triggers some other processes that don't like to be called in an existing pytest instance. Sorry for the headache.
+def test_run_tests():
+    imports = ("import pytest\n"
+               "import os\n"
+               "from unittest.mock import MagicMock, patch, mock_open\n"
+               "from pytesting_api.test_runner import test_runner\n"
+               "from pytesting_api import global_test_variables\n"
+            )
     
-    #test lock acquisition
-    mock_lock.acquire.return_value = False
-    with pytest.raises(RuntimeError) as excinfo:
-        runner.run_tests()
-    assert "Could not acquire test group lock" in str(excinfo.value)
+    mock_make_html_report = "patch('pytesting_api.test_runner.test_runner.make_html_report')"
+    mock_coms = "patch('pytesting_api.global_test_variables.coms', MagicMock(send_request=MagicMock()))"
+    mock_os = "patch('pytesting_api.test_runner.os', MagicMock(path=MagicMock(exists=MagicMock(), join=MagicMock(return_value=''), getmtime=abs), makedirs=MagicMock(), remove=MagicMock(), devnull=os.devnull))"
+    mock_yaml = "patch('pytesting_api.test_runner.yaml', MagicMock(safe_load=MagicMock()))"
+    mock_pytest = "patch('pytesting_api.test_runner.pytest', MagicMock(main=MagicMock(return_value=0)))"
+    mock_datetime = "patch('pytesting_api.test_runner.datetime', MagicMock(now=MagicMock(return_value=3)))"
+    mock_open = "patch('builtins.open', mock_open(read_data='sbeve'))"
+    mock_contextlib = "patch('pytesting_api.test_runner.contextlib', MagicMock(redirect_stdout=MagicMock(), redirect_stderr=MagicMock()))"
 
-    #with debug
+    run_test = (f"with ({mock_coms} as mock_coms, {mock_os} as mock_os, {mock_yaml} as mock_yaml, {mock_make_html_report} as mock_html, {mock_pytest} as mock_pytest, {mock_datetime} as mock_datetime, {mock_open} as mock_open, {mock_contextlib} as mock_contextlib):\n"
+                "  runner = test_runner()\n"
+                "  mock_lock = MagicMock(acquire=MagicMock(return_value=True))\n"
+                "  runner._test_runner__test_group_lock = mock_lock\n"
+                "  runner._test_runner__debug = True\n"
+                "  runner.run_tests()\n"
 
-    #with no failed tests
-    mock_pytest.return_value = 0
+                # Test with debug is True and no failed tests
+                "  mock_pytest.main.assert_called_with([\n"
+                "      '--html=',\n"
+                "      '--no-summary',\n"
+                "      '--quiet',\n"
+                "      '--tb=no',\n"
+                "      '--capture=no',\n"
+                "      '--disable-warnings',\n"
+                "      '--log-cli-level=INFO',\n"
+                "      'pytesting_api/tests/',\n"
+                "      '-m', \n"
+                "      'group1',\n"
+                "      ])\n"
+                "  data = {\n"
+                "       'test_run_time' : ['3'],\n"
+                "        'pass_fail' : ['Pass'],\n"
+                "        'session_ID' : ['']\n"
+                "  }\n"
+                "  mock_coms.send_request.assert_called_with('', ['save_data_group', 'tests_record', data, 'test_executor'])\n"
 
-    #with failed tests
-    mock_pytest.return_value = 1
+                # Test with debug is False and failed tests
+                "  runner._test_runner__debug = False\n"
+                "  mock_pytest.main.return_value = 798569\n"
+                "  data['pass_fail'] = ['fail']\n"
+                "  runner.run_tests()\n"
+
+                "  mock_open.assert_called_with(os.devnull, 'w')\n"
+                "  mock_coms.send_request.assert_called_with('', ['save_data_group', 'tests_record', data, 'test_executor'])\n"
+
+                # Ensure lock is handled correctly
+                "  mock_lock.acquire.return_value = False\n"
+                "  with pytest.raises(RuntimeError) as excinfo:\n"
+                "      runner.run_tests()\n"
+                "  assert 'Could not acquire test group lock' in str(excinfo.value)\n"
+               )
+
+    result = subprocess.run(
+        [sys.executable, "-c", imports + run_test],
+        capture_output=True,
+        text=True
+    )
+
+    if DEBUG:
+        print(f"\n\n{result.stderr=}")
+        print(f"\n\n{result.stdout=}")
+
+    assert result.stderr == '', 'Turn on debug to see full stderr output'
+    assert result.stdout == '', 'Turn on debug to see full stdout output'
 
 #TODO
 @pytest.mark.test_runner_tests

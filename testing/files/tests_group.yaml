@@ -1,0 +1,59 @@
+FBPI DAC Calibration:
+  Description: FBPI DAC calibrations with keithly
+  Parameters:
+    FBPI_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: FBPI_DAC
+RAMI DAC Calibration:
+  Description: RAMI DAC calibrations with keithly
+  Parameters:
+    RAMI_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+    SECOND_TEST:
+    - '1'
+    - '-1'
+  Period: 3600
+  Procedures: RAMI_DAC,SECOND_TEST
+AOP 1 DAC Calibration:
+  Description: AOP1 DAC calibrations with keithly
+  Parameters:
+    AOP1_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: AOP1_DAC
+AOP 2 DAC Calibration:
+  Description: AOP2 DAC calibrations with keithly
+  Parameters:
+    AOP2_DAC:
+    - '-2'
+    - '2'
+    - '1'
+    - '1'
+    - '500'
+  Period: 3600
+  Procedures: AOP2_DAC
+FBPI ADC Calibration:
+  Description: FBPI ADC calibrations with keithly DVM, current supply
+  Parameters:
+    FBPI_ADC:
+    - -3e-6
+    - 3e-6
+    - '5'
+    - '-4'
+    - '4'
+    - '1'
+  Period: 3600
+  Procedures: FBPI_ADC

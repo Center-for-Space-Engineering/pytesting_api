@@ -214,3 +214,14 @@ Keithley Sweep SWP FBP:
     - ''
   Period: 5
   Procedures: KeithSwpSWPFBP
+Day in the life:
+  Description: A test to run the board for a day in the life
+  Parameters:
+    DayLife:
+    - '10'
+    - '9'
+    - '0'
+    - '3'
+    - '0.25'
+  Period: 900
+  Procedures: DayLife

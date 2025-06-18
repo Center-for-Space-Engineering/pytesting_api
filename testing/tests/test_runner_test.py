@@ -97,7 +97,7 @@ def test_run_predefined_test(mock_run_test, mock_set_test_group, mock_time, patc
     assert global_test_variables.tests_parameters_dict == {'RAMI_DAC': ['-2', '2', '1', '1', '500'], 'SECOND_TEST': ['1', '-1']}
 
 @pytest.mark.test_runner_tests
-# In order to mock pytest.main, a subprocess must be created, because calling pytest triggers some other processes that don't like to be called in an existing pytest instance. Sorry for the headache.
+# In order to mock pytest.main, a subprocess must be created, because calling pytest (even if it's mocked) triggers some other processes that don't like to be called in an existing pytest instance
 def test_run_tests():
     imports = ("import pytest\n"
                "import os\n"
@@ -170,11 +170,6 @@ def test_run_tests():
 
     assert result.stderr == '', 'Turn on debug to see full stderr output'
     assert result.stdout == '', 'Turn on debug to see full stdout output'
-
-#TODO
-@pytest.mark.test_runner_tests
-def test_make_html_report():
-    pass
 
 @pytest.mark.test_runner_tests
 @patch('pytesting_api.test_runner.glob.glob')

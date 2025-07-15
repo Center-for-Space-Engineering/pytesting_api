@@ -238,4 +238,3 @@ class test_runner:
             self.__test_group_lock.release()
         else :
             raise RuntimeError("Could not aquire test group lock")
-

@@ -1,4 +1,4 @@
-import os
+zzimport os
 import pytest
 from unittest.mock import MagicMock, patch
 from itertools import cycle

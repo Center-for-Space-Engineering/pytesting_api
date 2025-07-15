@@ -31,10 +31,8 @@ def get_last_idx(table_name):
     return return_val
 
 def save_data_to_db(table_name, data, thread_name):
-   '''
-        Saves data into the data base
-   '''
-   coms.send_request(db_name, ['save_data_group', table_name, data, thread_name])
+    '''Saves data into the data base'''
+    coms.send_request(db_name, ['save_data_group', table_name, data, thread_name])
 
 def get_data_from_data_base(table_name, starting_idx, max_num_lines):
     '''
